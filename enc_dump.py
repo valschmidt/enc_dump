@@ -13,6 +13,17 @@ import fnmatch
 
 # Setup argument parsing.
 parser = argparse.ArgumentParser()
+parser.description = ("Enc_dump will dump Layer, Feature and Feature Attributes "
+                      "from a US Electronic Nautical Chart (ENC). Enc_dump will parse "
+                      "data from an individual file, or recursively walk a "
+                      "directory of files parsing every ENC found. One may "
+                      "specify the layer and feature ID to extract, (or <all> "
+                      "for all of them) Output is written one feature attribute "
+                      "per line, with prepended file name, Layer, Feature ID "
+                      "and Feature Attribute name. If a geometry is associated "
+                      "with the attribute, it is prepended to the line as WKT.")
+
+
 group = parser.add_mutually_exclusive_group()
 group.add_argument('-f','--file',
                    action = 'store',
@@ -23,18 +34,18 @@ group.add_argument('-d','--directory',
 parser.add_argument('-v','--verbose',
                     action = 'count',
                     help = 'Verbose output, -vvv = more output')
-parser.add_argument('-c','--comma',
-                    action='store_true',
-                    default=False,
-                    help = 'Set the output delimiter to comma (default: \t)')
+#parser.add_argument('-c','--comma',
+#                    action='store_true',
+#                    default=False,
+#                    help = 'Set the output delimiter to comma (default: \t)')
 parser.add_argument('-l','--layer',
                     action='store',
-                    help = 'Layer to Extract')
+                    help = 'Layer to Extract, or "all" for all of them.')
 parser.add_argument('-F','--feature',
                     action='store',
-                    help='Comma separated list of features to extract. This only works for scalar values')
+                    help='Comma separated list of features to extract. This only works for scalar values. ("all" for all of them)')
 
-class deep_obj:
+class ENC:
     """ Method for finding deep obstacles (WL=3) that don't have a sounding."""
     def __init__(self, ENC_filename= '/home/mapper/Desktop/ENC_ROOT/US5NH01M/US5NH01M.000',
                  verbose = 0):
@@ -75,7 +86,10 @@ class deep_obj:
             
     def deep_unknown_objs(self, layer):
         """ This function checks to see if the inputed layer contains any
-            of the features are deep and do not have a sounding.
+            underwater rocks or wrecks, and reports those that do not have 
+            a sounding.
+            
+            The results are printed to stdout. 
         """
         global comma
         # Get the name of the layer
@@ -121,28 +135,45 @@ class deep_obj:
 
                     #print '{} that {}, Lat: {} Long:{}'.format(name, WL, geom.GetX(), geom.GetY())
 
-    def print_feature_info(self):
-        pass
+    def print_feature_info(self,feat,name):
+        ''' Under development - not used'''
+        HasFeature = False
+        
+        for feat_attribute in feat.keys():
+            if feat_attribute == name or name == 'all':
+                HasFeature = True
+                #print("   ATTR:" + featid + ':' + feat.GetFieldAsString(featid))
+                geom = feat.GetGeometryRef()
+                if geom is not None:
+                    poly = geom.ExportToIsoWkt()
+                else:
+                    poly = ""
+                    
+                print("%s,%s,%s,%s,%s" % 
+                      (os.path.basename(self.ENC_filename),
+                       desc,
+                       feat_attribute,
+                       feat.GetFieldAsString(feat_attribute),
+                       poly))
+        return HasFeature
     
     def run(self):
-        
-        """ Actually run the method. """
+        ''' The method that extracts features and writes them to stdout.
+        This is the main method of this class. It takes no arguments 
+        and requires specifying the desired layer/feature types 
+        in the appropriate ENC class variables. 
+        '''
+      
         HasFeature = False
+        
+        # Open the file...
         ds = ogr.Open(self.ENC_filename)
-        #rocks = ds.GetLayerByName('UWTROC')
-        #wrecks = ds.GetLayerByName('WRECKS')
-        
-        #if rocks:
-        #    self.deep_unknown_objs(rocks)
-        #if wrecks:
-        #    self.deep_unknown_objs(wrecks)
-
-        #print(os.path.basename(self.ENC_filename))
-        
         Nlayers = ds.GetLayerCount()
+        
         if verbose >= 2:
             print("Found %d Layers." % Nlayers)
         
+        # Loop through the layers....
         for i in range(ds.GetLayerCount()):
             
             layer = ds.GetLayerByIndex(i)
@@ -157,37 +188,40 @@ class deep_obj:
                 print("Error on layer " + str(i)) 
     
             # If 'dump' was specified just print all the layers found. 
+            # Undocumented output...
             if self.layerName == 'dump':
                 if self.featureName is None:
                     print("%s,%s" % 
                       (os.path.basename(self.ENC_filename),
                                         desc))
                     break
-                
-                
 
+                
             # Extract the desired features from the desired layer. 
             if (desc == self.layerName or self.layerName == 'all'):
 
+                
                 if self.featureName == 'all':
                     #print("   LAYER:" + desc)
 
                     for j in range(Nfeat):
                         feat = layer.GetNextFeature()
                         print('   FEAT:' + str(feat.GetFID()))
-                        for featid in feat.keys():
-                            print('       ATTR:' + featid + ':' + feat.GetFieldAsString(featid))
+                        for feat_attribute in feat.keys():
+                            
+                            
+                            print('       ATTR:' + feat_attribute + ':' + feat.GetFieldAsString(feat_attribute))
 
                 else:
-                    #print("   LAYER:" + desc)
-                    
-                    #print("LAYER:" + desc)                    
-
+                  
+                    # Handle a possible list of features to extract...
                     for name in self.featureName:
+                        
                         for j in range(Nfeat):
                             feat = layer.GetNextFeature()
-                            for featid in feat.keys():
-                                if featid == name or name == 'all':
+                            
+                            for feat_attribute in feat.keys():
+                                if feat_attribute == name or name == 'all':
                                     HasFeature = True
                                     #print("   ATTR:" + featid + ':' + feat.GetFieldAsString(featid))
                                     geom = feat.GetGeometryRef()
@@ -199,19 +233,19 @@ class deep_obj:
                                     print("%s,%s,%s,%s,%s" % 
                                           (os.path.basename(self.ENC_filename),
                                            desc,
-                                           featid,
-                                           feat.GetFieldAsString(featid),
+                                           feat_attribute,
+                                           feat.GetFieldAsString(feat_attribute),
                                            poly))
         
         
-        # This prints the file name alone, even if the desired layer was not found.
+        # This prints the file name alone, even if the desired feature was not found.
         if not HasFeature:
             print(os.path.basename(self.ENC_filename))
             
 
 if __name__ == "__main__":
 
-
+    # Setup and argument parsing...
     enc_files_to_process = []
     args = parser.parse_args()
     verbose = args.verbose    
@@ -230,6 +264,7 @@ if __name__ == "__main__":
         
     elif args.directory:
         directory = args.directory
+        # Walk the directory tree looking for ENCs
         for root, dirnames, filenames in os.walk(directory):
             for filename in fnmatch.filter(filenames,'US*.000'):
                 enc_files_to_process.append(os.path.join(root,filename))
@@ -238,7 +273,7 @@ if __name__ == "__main__":
         if verbose >= 2:
             print('Processing %s ' % enc)
 
-        obj = deep_obj(ENC_filename = enc)
+        obj = ENC(ENC_filename = enc)
         obj.verbose = verbose
         obj.layerName = args.layer
         if args.feature is not None:
