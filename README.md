@@ -1,7 +1,6 @@
-﻿# README
+﻿# enc_dump
 
-    enc_dump
-Enc_dump.py is a python script (build on GDAL) which extracts Layers, Features and Feature Attributes from Electronic Nautical Charts.
+`enc_dump.py` is a python script (build on GDAL) which extracts Layers, Features and Feature Attributes from Electronic Nautical Charts.
 
 	usage: enc_dump.py [-h] [-f FILE | -d DIRECTORY] [-v] [-l LAYER] [-F FEATURE]
 

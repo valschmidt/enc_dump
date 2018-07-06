@@ -1,9 +1,15 @@
 #!/usr/bin/env python2
-# -*- coding: utf-8 -*-
 """
 Created on Fri Oct 28 10:17:50 2016
 
-@author: mapper
+@author: Val Schmidt
+@author: Sam Reed
+
+Center for Coastal and Ocean Mapping
+University of New Hamsphire
+Copyright 2018, All rights Reserved
+
+
 """
 
 import os
