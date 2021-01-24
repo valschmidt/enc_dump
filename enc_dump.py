@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 """
 Created on Fri Oct 28 10:17:50 2016
 
@@ -118,7 +118,7 @@ class ENC:
             # for operation". Skip these. 
             if geom.GetX() == 0.0:
                 if self.verbose >=2:
-                    print "ERROR: {} ".format(self.ENC_filename)
+                    print ("ERROR: {} ".format(self.ENC_filename))
                 else:
                     continue
                 
@@ -129,15 +129,15 @@ class ENC:
                     WL = WL_index
                     if verbose >=1:
                         if not comma:
-                            print '{}\t{}\t{}\t{}\t{}'.format(os.path.basename(self.ENC_filename), Nname, WL,geom.GetX(),geom.GetY())
+                            print('{}\t{}\t{}\t{}\t{}'.format(os.path.basename(self.ENC_filename), Nname, WL,geom.GetX(),geom.GetY()))
                         else:
-                            print '{},{},{},{},{}'.format(os.path.basename(self.ENC_filename), Nname, WL,geom.GetX(),geom.GetY())
+                            print('{},{},{},{},{}'.format(os.path.basename(self.ENC_filename), Nname, WL,geom.GetX(),geom.GetY()))
                             
                     else:
                         if not comma:
-                            print '{}\t{}\t{}\t{}'.format(Nname, WL,geom.GetX(),geom.GetY())
+                            print('{}\t{}\t{}\t{}'.format(Nname, WL,geom.GetX(),geom.GetY()))
                         else:
-                            print '{},{},{},{}'.format(Nname, WL,geom.GetX(),geom.GetY())
+                            print('{},{},{},{}'.format(Nname, WL,geom.GetX(),geom.GetY()))
 
                     #print '{} that {}, Lat: {} Long:{}'.format(name, WL, geom.GetX(), geom.GetY())
 
